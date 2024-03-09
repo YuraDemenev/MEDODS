@@ -1,0 +1,9 @@
+port: "8080"
+addres: "localhost:8080"
+
+mongo:
+  Url: "mongodb"
+  Addres: "127.0.0.1:27017"
+
+signingKey : "asd[i31l]asd98_LKd1das"
+
