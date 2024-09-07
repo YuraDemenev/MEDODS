@@ -48,4 +48,4 @@ Docker:<br/>
 Поменять db host на postgres (надо раскомментить строку, и закоментить с localhost). По умолчание в config подключение к ДБ идет по localhost.<br/>
 
 Tests:<br/>
-Тесты лежат в паке tests. в неё два файла в all_test.go запускаются тесты, в test_table.go лежать сами тесты.<br/>
+Тесты лежат в паке tests. в ней два файла в all_test.go запускаются тесты, в test_table.go лежать сами тесты.<br/>
