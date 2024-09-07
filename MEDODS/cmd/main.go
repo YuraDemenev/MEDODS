@@ -6,7 +6,6 @@ import (
 	"MEDODS/pkg/repository"
 	"MEDODS/pkg/service"
 	"MEDODS/pkg/tokens"
-	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -14,40 +13,50 @@ import (
 )
 
 func main() {
-	//load config
+	//Загружаем конфиг(config.yml)
 	err := initConfig()
+	//Проверяем наличие ошибки при загрузки
 	if err != nil {
 		logrus.Fatalf("initializing config error: %s", err.Error())
 	}
 	fmt.Println("Succes config load")
 
-	ctx := context.Background()
+	//Подключаемся к PostgreSQL
+	db, err := repository.NewPostgresDB(repository.Config{
+		//Подстваляем данные из config
+		Host:     viper.GetString("dbPostgres.host"),
+		Port:     viper.GetString("dbPostgres.port"),
+		UserName: viper.GetString("dbPostgres.username"),
+		DBName:   viper.GetString("dbPostgres.dbname"),
+		SSLMode:  viper.GetString("dbPostgres.sslmode"),
+		Password: viper.GetString("dbPostgres.password"),
+	})
 
-	//Connect to Mongo
-	client, err := repository.NewMongoDB(repository.ConfigDB{
-		Url:    viper.GetString("mongo.Url"),
-		Addres: viper.GetString("mongo.Addres"),
-	}, ctx)
-
-	defer client.Disconnect(ctx)
-
+	//Проверяем наличие ошибки
 	if err != nil {
-		logrus.Fatalf("Cant connect to mongo. Err: %s", err.Error())
+		logrus.Fatalf("Cant connect to postgreSQL. Err: %s", err.Error())
 	}
-	fmt.Println("Succes connect to mongo")
+	fmt.Println("Succes connect to postgreSQL")
 
-	//Initilize services
-	repos := repository.New(client)
+	//Инициализируем репозиторий(Здесь находсятся все функции, которые будут взаимодействовать с БД).
+	//Функции будут запаскаться через services
+	repos := repository.NewRepository(db)
+	//В token будут создоваться и обрабатываться токены
 	token, err := tokens.New(viper.GetString("signingKey"))
 	if err != nil {
 		logrus.Fatalf("Problem with signing key. Err:%s", err)
 	}
 
+	//Инициализируем сервисы(Сервисы будут использоваться для запуска, если понадобиться дополнительных функций
+	//перед взаимодействием с БД и через сервисы будут запускаться функции для взаимодействия с БД).
+	//Функции сервисов запускаются из Handlers
 	services := service.NewService(repos, token)
 
-	//Initilize handlers
+	//Инициализируем handler(здесь мы задаём пути запроса и также указываем какие функции запустяться по данному пути)
 	handlers := handlers.New(services)
+	//Создаем сервер
 	server := new(elements.Server)
+	//Запускаем сервер
 	err = server.Run(viper.GetString("port"), handlers.InitRoutes())
 	if err != nil {
 		logrus.Fatalf("error while runnig server: %s", err.Error())

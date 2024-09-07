@@ -1,28 +1,29 @@
 package repository
 
 import (
-	"go.mongodb.org/mongo-driver/mongo"
+	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Repository struct {
-	Authorization
-	RefreshTokens
+	Tokens
+	User
 }
 
-type Authorization interface {
-	CreateUser(userName, password string) (string, error)
-	GetUserId(username, password string) (string, error)
-	SaveRefreshToken(refreshToken string, guid string) (string, error)
-	GetUserName(guid string) (string, error)
+type Tokens interface {
+	SaveRefreshToken(refreshToken string, guid string) error
+	GetRefreshToken(guid string) (string, time.Time, error)
+	CheckAvailableToken(guid string) (bool, error)
 }
 
-type RefreshTokens interface {
-	CheckExpireTime(tokenRefresh, tokenRefreshGUID string) (string, error)
+type User interface {
+	GetUserEmail(guid string) (string, error)
 }
 
-func New(client *mongo.Client) *Repository {
+func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
-		Authorization: NewAuthMongo(client),
-		RefreshTokens: NewRefreshMongo(client),
+		Tokens: NewTokensPostgre(db),
+		User:   NewUserPostgre(db),
 	}
 }

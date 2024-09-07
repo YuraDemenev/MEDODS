@@ -6,24 +6,16 @@ import (
 )
 
 type Service struct {
-	Authorization
-	RefreshTokens
+	Tokens
 }
 
-type Authorization interface {
-	GenerateToken(username, password string) (string, string, string, error)
-	ParseToken(token string) (string, error)
-	CreateUser(username, password string) (string, error)
-	GetUserName(guid string) (string, error)
-}
-
-type RefreshTokens interface {
-	RefreshTokens(tokenRefresh string, tokenRefreshGUID string) (string, string, string, string, error)
+type Tokens interface {
+	GenerateNewTokens(guid, ip string) (string, string, error)
+	RefreshTokens(accessToken, refreshToken string, ip string) (string, string, string, bool, error)
 }
 
 func NewService(repos *repository.Repository, token *tokens.Tokens) *Service {
 	return &Service{
-		Authorization: NewAuthService(repos.Authorization, token),
-		RefreshTokens: NewRefreshTokensService(repos.RefreshTokens, repos.Authorization, token),
+		Tokens: NewTokensService(repos.Tokens, token, repos.User),
 	}
 }

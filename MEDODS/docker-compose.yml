@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      POSTGRES_PASSWORD: 260203
+      POSTGRES_USER: "postgres"
+      POSTGRES_DB: "MEDODS"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./init_up.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d MEDODS" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  site:
+    image: yurademenev/medods
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+    volumes:
+      - ./config:/config
+
+# docker exec -it 9ec1a8ba39e0 bash
+# psql -U postgres
